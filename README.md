@@ -10,4 +10,4 @@ Once this is done we can learn and propigate to good levels of confidence!
 
 Running the program we will get some results as so..
 
-[[https://user-images.githubusercontent.com/33335790/49350015-22732700-f662-11e8-8a52-f485554582a9.png]]
+![alt text](https://user-images.githubusercontent.com/33335790/49350015-22732700-f662-11e8-8a52-f485554582a9.png)

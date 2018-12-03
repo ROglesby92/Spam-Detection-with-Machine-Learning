@@ -85,24 +85,24 @@ neural_network = NN()
 
 # Get our values from our data set.
     
-inputs = array(data,dtype=float128);
+inputs = array(data,dtype=float128)
 
-outputs = array([herustic],dtype=float128).T;
+outputs = array([herustic],dtype=float128).T
 
 training_cycles = 300
 
-neural_network.train(inputs, outputs, training_cycles);
+neural_network.train(inputs, outputs, training_cycles)
 
-print("Training  {} CYCLES..".format(training_cycles));
+print("Training  {} CYCLES..".format(training_cycles))
 
 # Grab 10 random samples
 for x in range(10):
-  r = random.randint(1,4601);
+  r = random.randint(1,4601)
   
   spam_test = inputs[r]
-  spam_result = outputs[r];
+  spam_result = outputs[r]
   
-  print("Actual awnser: "+str(spam_result) + "|" + "Network confidence: " + str(neural_network.learn(spam_test)));
+  print("Actual awnser: "+str(spam_result) + "|" + "Network confidence: " + str(neural_network.learn(spam_test)))
 
  
  

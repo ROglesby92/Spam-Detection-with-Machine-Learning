@@ -24,9 +24,13 @@ with open('spambase.data') as csv_file:
 	#for each attribute in each training set data
   for x in range(len(data[0])):
 		# get min / max 
-		max = 0.0
-		min = 1.0
+		max = None
+		min = None
 		for i in range(len(data)):
+			if max == None:
+				max = data[i][x]
+			if min == None:
+				min = data[i][x]
 			if data[i][x] > max:
 				max = data[i][x]
 			if data[i][x] < min:

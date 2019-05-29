@@ -225,7 +225,7 @@ def main(argv):
     testLabels = kfolds[0][1][:]
 
     print "LENGTH OF DATA: " +str(len(kfolds[0][1])*NUM_SPLITS)
-    print "NUMBER OF FOLDS: " + str(len(kfolds-1))
+    print "NUMBER OF FOLDS: " + str(len(kfolds)-1)
     print "FOLD LENGTH: " + str(len(kfolds[0][1]))
     print "NUMBER OF EPOCHS: " + str(MAX_ITERATIONS)
     print "TRAINING RATE: " + str(ALPHA)

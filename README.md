@@ -16,3 +16,5 @@ Running the program we will get some results as so..
 UPDATE**
 
 Improved program to now compare K-NN Machine learning with a single layer NN on any data csv file to compare acc.
+
+Performs K-Fold validation with training data and then with best attribute, performs with entire training set on 20% of unseen data (test set)

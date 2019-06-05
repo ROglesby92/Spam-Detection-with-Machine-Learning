@@ -5,14 +5,17 @@ https://archive.ics.uci.edu/ml/machine-learning-databases/spambase/spambase.data
 """
 import csv
 import sys
+import math
+import numpy as np
 from numpy import *
 
-ERR_FORGIVE = .25
-MAX_ITERATIONS = 1000
+ERR_FORGIVE = .5
+MAX_ITERATIONS = 3000
 NUM_SPLITS = 5
-ALPHA = .1
-file_name = 'spambase.data'
-K_VALUE = 3
+ALPHA = .2
+
+MAX_HERUISTIC = 0
+MIN_HERUISTIC = 0
 
 
 # Extract the statistics from out data file.
@@ -30,6 +33,12 @@ def open_file(filename):
             float_list = [float(v) for v in row]
             data.append(float_list)
     return data, y
+
+def copy_list(datalist):
+    copylist = []
+    for i in datalist:
+        copylist.append(i)
+    return copylist
 
 
 def standardize_data(data):
@@ -61,8 +70,38 @@ def normalize_data(data):
                 min = data[i][x]
         # apply the normalization to each value.
         for i in range(len(data)):
-            data[i][x] = (data[i][x] - min) / (max - min)
+            try:
+                data[i][x] = (data[i][x] - min) / (max - min)
+            except ZeroDivisionError:
+                data[i][x] = 0
 
+# Finds MOST influencel attribute towards a YES(1) CLASSIFICATION
+# Finds LEAST influencel attribute towards a NO(0) CLASSIFICATION
+# return elements that are not weighted one way or another, even elements.
+def generate_hueristic(data,labels,numElements=15):
+    w = [ 0.0 for i in range(len(data[0])) ]
+
+    for i in range(len(data)):
+        for j in range(len(data[i])):
+            if labels[i] == 0:  # No classificaiton
+                w[j] -= data[i][j]
+            else:               # Yes classification
+                w[j] += data[i][j]
+
+
+    hList = set()
+    threshhold = 1
+    targetAmount = len(w) - numElements
+    # Trim list elements until there is 20
+    while(len(hList) < targetAmount):
+        for z in w:
+            if z> -threshhold and z<threshhold and (len(hList) < targetAmount):
+                #hList.append(w.index(z))
+                hList.add(w.index(z))
+        threshhold += 1
+        # incremenet threshhold to get next layer of elements
+
+    return hList
 
 class NN(object):
     def __init__(self, weight_sz, alpha=.25):
@@ -141,21 +180,44 @@ def split_data_set(data, y, n):
         train_sets.append((kdata, ky))
     return train_sets, full_set
 
+def cosine_similarity(v1,v2):
+    "compute cosine similarity of v1 to v2: (v1 dot v2)/{||v1||*||v2||)"
+    sumxx, sumxy, sumyy = 0, 0, 0
+    for i in range(len(v1)):
+        x = v1[i]; y = v2[i]
+        sumxx += x*x
+        sumyy += y*y
+        sumxy += x*y
 
-def classify(values, objToClassify, k=1):
+    try:
+        return sumxy/math.sqrt(sumxx*sumyy)
+    except ZeroDivisionError:
+        return 0.
+
+def classify(values, objToClassify, k=1,measure="L2"):
     distance = []
     # 0 + 1 Classifications
     for label in values:
         for person in values[label]:  # Go through each person.
             manhattenDistance = 0.0
             l2Distance = 0.0
-            for i in range(len(person)):
-                #manhattenDistance += abs(person[i] - objToClassify[i])
-                l2Distance += (person[i]-objToClassify[i])**2
+            cosignsimDistance = 0.0
+            if measure == "cosign":
+                cosignsimDistance += cosine_similarity(person,objToClassify)
+                distance.append((-cosignsimDistance, label))
+            else:
+                for i in range(len(person)):
+                    if measure == "L2":
+                            l2Distance += (person[i]-objToClassify[i])**2
+                    else:
+                            manhattenDistance += abs(person[i] - objToClassify[i])
+                        # Add a tuple of form (distance,classification) in the distance list
 
-            # Add a tuple of form (distance,classification) in the distance list
-            #distance.append((manhattenDistance, label))
-            distance.append((sqrt(l2Distance), label))
+                if measure == "L2":
+                        distance.append((sqrt(l2Distance), label))
+                else:
+                    distance.append((manhattenDistance, label))
+
     # and select first k distances after sorting by shortest first.
     distance = sorted(distance)[:k]
     freq1 = 0  # frequency of label 0
@@ -182,15 +244,40 @@ def create_classifications(data, lables):
 
 def test_KNN(data,labels,CL,k):
     correct = 0
+    correct2 = 0
+    correct3 = 0
     for i in range(len(data)):
-        pred = classify(CL, data[i], k)
+        pred = classify(CL, data[i], k,measure="Manhatten")
+        pred2 = classify(CL, data[i], k,measure="L2")
+        pred3 = classify(CL, data[i], k,measure="cosign")
         if labels[i] == pred:
             correct += 1
+        if labels[i] == pred2:
+            correct2 += 1
+        if labels[i] == pred3:
+            correct3 += 1
     acc = float(correct)/len(data)
+    acc2 = float(correct2)/len(data)
+    acc3 = float(correct3)/len(data)
+
     #print("Accuracy: ", acc)
-    return acc
+    return acc,acc2,acc3
+
+#Remove an attribute by making all values the same.
+def dampen_attributes(data,n):
+    for i in range(n):
+        r = random.randint(0, len(data[0]))
+        for row in data:
+            row.pop(r)
 
 
+def remove_attributes(datalist,hlist):
+    idx = 0
+    for i in hlist:
+        j = i - idx
+        for row in datalist:
+            row.pop(j)
+        idx += 1
 
 def test_accuracy(test, NN):
     correct = 0
@@ -213,92 +300,307 @@ def main(argv):
         sys.exit(2)
 
     # Open and normalize data
-    (data, y) = open_file(argv[0])
-    normalize_data(data)
+    #(data, y) = open_file(argv[0])
 
-    # Splits data into K Folds + 20% Test data
-    # trainig_data is 80% test data no folds
-    kfolds, training_data = split_data_set(data, y, NUM_SPLITS)
+    #normalize_data(data)
 
-    # First split is 20% of set, take that for test data
-    testData = kfolds[0][0][:]
-    testLabels = kfolds[0][1][:]
+    # Attributes that are equally distributed among spam and regular mail
+    #h = generate_hueristic(data,y,10.0)
+    #remove_attributes(data,h)
 
+    man_avg_knn1 = 0.0
+    man_avg_knn3 = 0.0
+    man_avg_knn5 = 0.0
+
+    l2_avg_knn1 = 0.0
+    l2_avg_knn3 = 0.0
+    l2_avg_knn5 = 0.0
+
+    cosign_avg_knn1 = 0.0
+    cosign_avg_knn3 = 0.0
+    cosign_avg_knn5 = 0.0
+
+    num_epochs = 10
+
+    for i in range(num_epochs):
+        print "ITER: " + str(i)
+        (data, y) = open_file(argv[0])
+
+        normalize_data(data)
+
+        # Attributes that are equally distributed among spam and regular mail
+        h = generate_hueristic(data,y)
+        remove_attributes(data,h)
+
+        # Splits data into K Folds + 20% Test data
+        # trainig_data is 80% test data no folds
+        kfolds, training_data = split_data_set(data, y, NUM_SPLITS)
+
+        # First split is 20% of set, take that for test data
+        testData = kfolds[0][0][:]
+        testLabels = kfolds[0][1][:]
+
+
+        #print "Starting on regular test data. . .:\n"
+        #print "NUMBER OF ATTRIBUTES REMOVED FROM HERUISTIC: " + str(len(h))
+
+        #print "\n1-NN . . ."
+        CL = create_classifications(training_data[0],training_data[1])
+        x,y,z = test_KNN(testData,testLabels,CL,1)
+        #print "Manhatten Test ACC: " + str(x)
+        #print "L2 Test ACC: " + str(y)
+        #print "Cosign Test ACC: " + str(z)
+        #print "------------------------------"
+
+        man_avg_knn1 += x
+        l2_avg_knn1 += y
+        cosign_avg_knn1 += z
+
+
+        x,y,z = test_KNN(testData,testLabels,CL,3)
+
+        man_avg_knn3 += x
+        l2_avg_knn3 += y
+        cosign_avg_knn3 += z
+
+        #print "\n3-NN"
+        #print "Manhatten Test ACC: " + str(x)
+        #print "L2 Test ACC: " + str(y)
+        #print "Cosign Test ACC: " + str(z)
+        #print "------------------------------"
+        x,y,z = test_KNN(testData,testLabels,CL,5)
+
+        man_avg_knn5 += x
+        l2_avg_knn5 += y
+        cosign_avg_knn5 += z
+
+        #print "\n5-NN"
+        #print "Manhatten Test ACC: " + str(x)
+        #print "L2 Test ACC: " + str(y)
+        #print "Cosign Test ACC: " + str(z)
+        #print "------------------------------"
+
+    print "FINAL TOTAL ACC REPORT . . ."
+
+    print "MANHATTEN 1-NN: " + str(man_avg_knn1 / num_epochs)
+    print "MANHATTEN 3-NN: " + str(man_avg_knn3 / num_epochs)
+    print "MANHATTEN 5-NN: " + str(man_avg_knn5 / num_epochs)
+    print "------------------------------"
+    print "L2 1-NN: " + str(l2_avg_knn1 / num_epochs)
+    print "L2 3-NN: " + str(l2_avg_knn3 / num_epochs)
+    print "L2 5-NN: " + str(l2_avg_knn5 / num_epochs)
+    print "------------------------------"
+    print "Cosign 1-NN: " + str(cosign_avg_knn1 / num_epochs)
+    print "Cosign 3-NN: " + str(cosign_avg_knn3 /num_epochs)
+    print "Cosign 5-NN: " + str(cosign_avg_knn5 / num_epochs)
+    print "------------------------------"
+
+
+    return
     print "LENGTH OF DATA: " +str(len(kfolds[0][1])*NUM_SPLITS)
     print "NUMBER OF FOLDS: " + str(len(kfolds)-1)
     print "FOLD LENGTH: " + str(len(kfolds[0][1]))
-    print "NUMBER OF EPOCHS: " + str(MAX_ITERATIONS)
-    print "TRAINING RATE: " + str(ALPHA)
-    print "ERROR FORGIVENESS: " + str(ERR_FORGIVE)
+    #print "NUMBER OF EPOCHS: " + str(MAX_ITERATIONS)
+    #print "TRAINING RATE: " + str(ALPHA)
+    #print "ERROR FORGIVENESS: " + str(ERR_FORGIVE)
 
-    best_n = 3
+
+
+    best_n = 1
+    best_n2 = 1
+    best_n3 = 1
     best_acc = 0.0
+    best_acc2 = 0.0
+    best_acc3 = 0.0
+
+    final_acc = 0.0
 
     idx = 0
     knn_accuracy_list = []
+    knn_accuracy_list2 = []
+    knn_accuracy_list3 = []
 
     # All but training data
+
+    print "\nEvaluating 1-KK Nearest Neighbor..."
     for fold in kfolds[1:]:
         #break # Remove if testing KNN
         train_data = kfolds[1:]
         CL = create_classifications(fold[0], fold[1])
+
         train_data.remove(fold)
         train_accuracy = []
+        train_accuracy2 = []
+        train_accuracy3 = []
         for training_fold in train_data:
-            train_accuracy.append(test_KNN(training_fold[0],training_fold[1],CL,1))
-        foldacc = sum(train_accuracy)/(NUM_SPLITS-1.0)
-        print "Accuracy of fold: " + str(idx) + ": " + str(foldacc)
-        knn_accuracy_list.append(foldacc)
-        idx += 1
-    best_acc = sum(knn_accuracy_list)/NUM_SPLITS
-    print "1NN AVG ACC: = " + str(sum(knn_accuracy_list)/NUM_SPLITS)
+            x,y,z = test_KNN(training_fold[0],training_fold[1],CL,1)
+            train_accuracy.append(x)
+            train_accuracy2.append(y)
+            train_accuracy3.append(z)
 
+        foldacc = sum(train_accuracy)/(NUM_SPLITS-1.0)
+        foldacc2 = sum(train_accuracy2)/(NUM_SPLITS-1.0)
+        foldacc3 = sum(train_accuracy3)/(NUM_SPLITS-1.0)
+
+        print "[Fold "+ str(idx+1)+"-"+str(int(float(idx+1)/NUM_SPLITS*100))+"%]" + "Manhatten "+ ": " + str(foldacc) + "|" + " L2 "+ ": " + str(foldacc2) + "|" + " Cosign "+ ": " + str(foldacc3)
+
+        knn_accuracy_list.append(foldacc)
+        knn_accuracy_list2.append(foldacc2)
+        knn_accuracy_list3.append(foldacc3)
+        idx += 1
+
+    best_acc = sum(knn_accuracy_list)/NUM_SPLITS
+    best_acc2 = sum(knn_accuracy_list2)/NUM_SPLITS
+    best_acc3 = sum(knn_accuracy_list3)/NUM_SPLITS
+
+
+    dist_avg_acc = (best_acc+best_acc2+best_acc3)/3
+
+    print "\nManhatten 1-NN   AVG ACC: " + str(sum(knn_accuracy_list)/NUM_SPLITS)
+    print "L2 1-NN          AVG ACC: " + str(sum(knn_accuracy_list2)/NUM_SPLITS)
+    print "Cosine 1-NN      AVG ACC: " + str(sum(knn_accuracy_list3)/NUM_SPLITS)
+    print "\n1-NN Total AVG distance ACC: " + str(dist_avg_acc)
     idx = 0
     k3nn_accuracy_list = []
+    k3nn_accuracy_list2 = []
+    k3nn_accuracy_list3 = []
 
+    print "\nEvaluating 3-KK Nearest Neighbor..."
     for fold in kfolds[1:]:
         #break # Remove if testing KNN
         train_data = kfolds[1:]
         CL = create_classifications(fold[0], fold[1])
         train_data.remove(fold)
         train_accuracy = []
+        train_accuracy2 = []
+        train_accuracy3 = []
         for training_fold in train_data:
-            train_accuracy.append(test_KNN(training_fold[0],training_fold[1],CL,3))
+            x,y,z = test_KNN(training_fold[0],training_fold[1],CL,3)
+            train_accuracy.append(x)
+            train_accuracy2.append(y)
+            train_accuracy3.append(z)
+
         foldacc = sum(train_accuracy)/(NUM_SPLITS-1.0)
-        print "Accuracy of fold: " + str(idx) + ": " + str(foldacc)
+        foldacc2 = sum(train_accuracy2)/(NUM_SPLITS-1.0)
+        foldacc3 = sum(train_accuracy3)/(NUM_SPLITS-1.0)
+
+        print "[Fold "+ str(idx+1)+"-"+str(int(float(idx+1)/NUM_SPLITS*100))+"%]" + "Manhatten "+ ": " + str(foldacc) + "|" + " L2 "+ ": " + str(foldacc2) + "|" + " Cosign "+ ": " + str(foldacc3)
+
+
         k3nn_accuracy_list.append(foldacc)
+        k3nn_accuracy_list2.append(foldacc2)
+        k3nn_accuracy_list3.append(foldacc3)
         idx += 1
+
     if sum(k3nn_accuracy_list)/NUM_SPLITS > best_acc:
         best_acc = sum(k3nn_accuracy_list)/NUM_SPLITS
         best_n = 3
-    print "3NN AVG ACC: = " + str(sum(k3nn_accuracy_list)/NUM_SPLITS)
+    if sum(k3nn_accuracy_list2)/NUM_SPLITS > best_acc2:
+        best_acc2 = sum(k3nn_accuracy_list2)/NUM_SPLITS
+        best_n2 = 3
+    if sum(k3nn_accuracy_list3)/NUM_SPLITS > best_acc3:
+        best_acc3 = sum(k3nn_accuracy_list3)/NUM_SPLITS
+        best_n3 = 3
+
+    dist_avg_acc2 = (best_acc+best_acc2+best_acc3)/3
+
+    print "\nManhatten 3-NN   AVG ACC: " + str(sum(k3nn_accuracy_list)/NUM_SPLITS)
+    print "L2 3-NN          AVG ACC: " + str(sum(k3nn_accuracy_list2)/NUM_SPLITS)
+    print "Cosine 3-NN      AVG ACC: " + str(sum(k3nn_accuracy_list3)/NUM_SPLITS)
+    print "\n3-NN Total AVG distance ACC: " + str(dist_avg_acc2)
+
 
     idx = 0
     k5nn_accuracy_list = []
+    k5nn_accuracy_list2 = []
+    k5nn_accuracy_list3 = []
+
+    print "\nEvaluating 5-KK Nearest Neighbor..."
     for fold in kfolds[1:]:
         #break # Remove if testing KNN
         train_data = kfolds[1:]
         CL = create_classifications(fold[0], fold[1])
         train_data.remove(fold)
         train_accuracy = []
+        train_accuracy2 = []
+        train_accuracy3 = []
+
         for training_fold in train_data:
-            train_accuracy.append(test_KNN(training_fold[0],training_fold[1],CL,5))
+            x,y,z = test_KNN(training_fold[0],training_fold[1],CL,5)
+            train_accuracy.append(x)
+            train_accuracy2.append(y)
+            train_accuracy3.append(z)
+
         foldacc = sum(train_accuracy)/(NUM_SPLITS-1.0)
-        print "Accuracy of fold: " + str(idx) + ": " + str(foldacc)
+        foldacc2 = sum(train_accuracy2)/(NUM_SPLITS-1.0)
+        foldacc3 = sum(train_accuracy3)/(NUM_SPLITS-1.0)
+
+        print "[Fold "+ str(idx+1)+"-"+str(int(float(idx+1)/NUM_SPLITS*100))+"%]" + "Manhatten "+ ": " + str(foldacc) + "|" + " L2 "+ ": " + str(foldacc2) + "|" + " Cosign "+ ": " + str(foldacc3)
+
         k5nn_accuracy_list.append(foldacc)
+        k5nn_accuracy_list2.append(foldacc2)
+        k5nn_accuracy_list3.append(foldacc3)
         idx += 1
+
     if sum(k5nn_accuracy_list)/NUM_SPLITS > best_acc:
         best_acc = sum(k5nn_accuracy_list)/NUM_SPLITS
         best_n = 5
-    print "5NN AVG ACC: = " + str(sum(k5nn_accuracy_list)/NUM_SPLITS)
+    if sum(k5nn_accuracy_list2)/NUM_SPLITS > best_acc2:
+        best_acc2 = sum(k5nn_accuracy_list2)/NUM_SPLITS
+        best_n2 = 5
+    if sum(k5nn_accuracy_list3)/NUM_SPLITS > best_acc3:
+        best_acc3 = sum(k5nn_accuracy_list3)/NUM_SPLITS
+        best_n3 = 5
+
+    dist_avg_acc3 = (best_acc+best_acc2+best_acc3)/3
+
+    print "\nManhatten 5-NN   AVG ACC: " + str(sum(k5nn_accuracy_list)/NUM_SPLITS)
+    print "L2 5-NN          AVG ACC: " + str(sum(k5nn_accuracy_list2)/NUM_SPLITS)
+    print "Cosine 5-NN      AVG ACC: " + str(sum(k5nn_accuracy_list3)/NUM_SPLITS)
+    print "\n5-NN Total AVG distance ACC: " + str(dist_avg_acc3)
+
+    accList = [dist_avg_acc,dist_avg_acc2,dist_avg_acc3]
+    best_acc = max(dist_avg_acc,dist_avg_acc2,dist_avg_acc3)
+    best_idx = accList.index(best_acc)
+
+    best_found_n = 0
+
+    if best_idx == 0:
+        best_found_n = 1
+    if best_idx == 1:
+        best_found_n = 3
+    if best_idx == 2:
+        best_found_n = 5
 
 
-    print "Testing with best k-nn value: " + str(best_n)
+    #print "\nTesting with best found K-NN value: " + str(best_found_n)
+    print "Testing with on test data now..:\n"
+
     CL = create_classifications(training_data[0],training_data[1])
-    test_ac = test_KNN(testData,testLabels,CL,best_n)
-    print "Test ACC: " + str(test_ac)
-    print "########\n"
-    print "Testing neural_network acc on data...\n"
+    x,y,z = test_KNN(testData,testLabels,CL,1)
+
+    print "1-NN"
+    print "Manhatten Test ACC: " + str(x)
+    print "L2 Test ACC: " + str(y)
+    print "Cosign Test ACC: " + str(z)
+
+    x,y,z = test_KNN(testData,testLabels,CL,3)
+
+    print "\n3-NN"
+    print "Manhatten Test ACC: " + str(x)
+    print "L2 Test ACC: " + str(y)
+    print "Cosign Test ACC: " + str(z)
+
+    x,y,z = test_KNN(testData,testLabels,CL,5)
+
+    print "\n5-NN"
+    print "Manhatten Test ACC: " + str(x)
+    print "L2 Test ACC: " + str(y)
+    print "Cosign Test ACC: " + str(z)
+
+
+
+    print "\nTesting neural_network acc on data...\n"
 
 
     # print kfolds[0]
@@ -319,14 +621,14 @@ def main(argv):
             neural_network.train(inputs, outputs)
             train_accuracy.append(test_accuracy(fold, neural_network))
         foldacc = sum(train_accuracy)/(NUM_SPLITS-1.0)
-        print "Accuracy of fold: " + str(idx) + ": " + str(foldacc)
+        print "["+str(int(float(idx+1)/NUM_SPLITS*100))+"%] " +  "ACC FOLD " + str(idx+1) + ": " + str(foldacc)
         accuracy_list.append(foldacc)
         idx += 1
     print "AVG TRAIN ACC: = " + str(sum(accuracy_list)/NUM_SPLITS)
     inputs = array(training_data[0], dtype=float128)
     outputs = array([training_data[1]], dtype=float128).T
     neural_network.train(inputs,outputs)
-    print "TEST ACC     : = " + str(test_accuracy((testData,testLabels), neural_network))
+    print "TEST ACC     : " + str(test_accuracy((testData,testLabels), neural_network))
 
 if __name__ == "__main__":
     main(sys.argv[1:])

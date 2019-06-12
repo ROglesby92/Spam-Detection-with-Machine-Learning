@@ -11,9 +11,6 @@ MAX_ITERATIONS = 10000
 NUM_SPLITS = 5
 ALPHA = .1
 
-MAX_HERUISTIC = 0
-MIN_HERUISTIC = 0
-
 
 # Extract the statistics from out data file.
 
@@ -321,12 +318,6 @@ def main(argv):
         sys.exit(2)
 
     do_nn_only = False
-    # Open and normalize data
-    #(data, y) = open_file(argv[0])
-    #normalize_data(data)
-    #find_outliers(data)
-    #kfolds, training_data = split_data_set(data, y, NUM_SPLITS)
-
     if do_nn_only:
         total_nn_acc = 0.0
         for i in range(10):
@@ -356,9 +347,6 @@ def main(argv):
         return
 
 
-    # Attributes that are equally distributed among spam and regular mail
-    #h = generate_hueristic(data,y,10.0)
-    #remove_attributes(data,h)
 
     man_avg_knn1 = 0.0
     man_avg_knn3 = 0.0
@@ -404,10 +392,6 @@ def main(argv):
             h = generate_hueristic(data,y)
             remove_attributes(data,h)
 
-        # Attributes that are equally distributed among spam and regular mail
-        #h = generate_hueristic(data,y)
-        #remove_attributes(data,h)
-
         # Splits data into K Folds + 20% Test data
         # trainig_data is 80% test data no folds
         kfolds, training_data = split_data_set(data, y, NUM_SPLITS)
@@ -415,12 +399,6 @@ def main(argv):
         # First split is 20% of set, take that for test data
         testData = kfolds[0][0][:]
         testLabels = kfolds[0][1][:]
-
-
-        #print "Starting on regular test data. . .:\n"
-        #print "NUMBER OF ATTRIBUTES REMOVED FROM HERUISTIC: " + str(len(h))
-
-        #print "\n1-NN . . ."
         t_0 = time.time()
         CL = create_classifications(training_data[0],training_data[1])
         x,y,z = test_KNN(testData,testLabels,CL,1)
@@ -497,16 +475,12 @@ def main(argv):
 
 
     # For evaluating K-FOLD Splits and determing best K hyperparameter for K-NN
-
-
     if not do_kfold_validation:
         return
 
     print "LENGTH OF DATA: " +str(len(kfolds[0][1])*NUM_SPLITS)
     print "NUMBER OF FOLDS: " + str(len(kfolds)-1)
     print "FOLD LENGTH: " + str(len(kfolds[0][1]))
-
-
 
 
     best_n = 1
@@ -759,21 +733,6 @@ def main(argv):
     print "Cosine 15-NN     AVG ACC: " + str(sum(k15nn_accuracy_list3)/NUM_SPLITS)
     print "\n15-NN Total AVG distance ACC: " + str(dist_avg_acc5)
 
-
-
-    #accList = [dist_avg_acc,dist_avg_acc2,dist_avg_acc3]
-    #best_acc = max(dist_avg_acc,dist_avg_acc2,dist_avg_acc3)
-    #best_idx = accList.index(best_acc)
-    #best_found_n = 0
-    #if best_idx == 0:
-    #    best_found_n = 1
-    #if best_idx == 1:
-    #    best_found_n = 3
-    #if best_idx == 2:
-    #    best_found_n = 5
-
-    #print "\nTesting with best found K-NN value: " + str(best_found_n)
-    return
     print "Testing with on test data now..:\n"
     CL = create_classifications(training_data[0],training_data[1])
     x,y,z = test_KNN(testData,testLabels,CL,1)
@@ -800,8 +759,6 @@ def main(argv):
 
     print "\nTesting neural_network acc on data...\n"
 
-
-    # print kfolds[0]
     accuracy_list = []
     # Train each set with each other.
     idx = 0
@@ -830,5 +787,5 @@ def main(argv):
 
 if __name__ == "__main__":
     main(sys.argv[1:])
-# print("Actual awnser: "+str(spam_result) + "|" + "Network confidence: " + str(neural_network.learn(spam_test)))
+
 

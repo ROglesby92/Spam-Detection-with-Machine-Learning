@@ -8,3 +8,8 @@ We can compare at the end which classification method is more preferable.
 The test data is about 4601 lists of data, containing values ranging from all over based of various statistics such as number of words, number of unigram words , longest word, shortest word, etc.
 
 
+To use. Simply 
+
+python network.py spambase.data
+
+or any other dataset that follows the same principles of distribution, real number values for features and binary label result.

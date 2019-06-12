@@ -13,3 +13,7 @@ To use. Simply
 python network.py spambase.data
 
 or any other dataset that follows the same principles of distribution, real number values for features and binary label result.
+
+Using the herustic you will get a result such as this:
+
+https://user-images.githubusercontent.com/33335790/59325760-11524500-8c99-11e9-9381-7b2400744469.png

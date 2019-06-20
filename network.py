@@ -13,7 +13,6 @@ ALPHA = .1
 
 
 # Extract the statistics from out data file.
-
 def open_file(filename):
     data = []
     y = []
@@ -29,38 +28,24 @@ def open_file(filename):
     return data, y
 
 
-
-def standardize_data(data):
-    for x in data:
-        # Get mean.
-        _mean = sum(x) / len(x)
-        _list = []
-        for i in range(len(x)):
-            _list.append(pow((i - _mean), 2))
-
-        _std = math.sqrt(sum(_list) / len(_list))
-
-        for i in range(len(x)):
-            x[i] = (x[i] - _mean) / _std
-
 def normalize_data(data):
     for x in range(len(data[0])):
         # get min / max
-        max = None
-        min = None
+        _max = None
+        _min = None
         for i in range(len(data)):
-            if max == None:
-                max = data[i][x]
-            if min == None:
-                min = data[i][x]
-            if data[i][x] > max:
-                max = data[i][x]
-            if data[i][x] < min:
-                min = data[i][x]
+            if _max == None:
+                _max = data[i][x]
+            if _min == None:
+                _min = data[i][x]
+            if data[i][x] > _max:
+                _max = data[i][x]
+            if data[i][x] < _min:
+                _min = data[i][x]
         # apply the normalization to each value.
         for i in range(len(data)):
             try:
-                data[i][x] = (data[i][x] - min) / (max - min)
+                data[i][x] = (data[i][x] - _min) / (_max - _min)
             except ZeroDivisionError:
                 data[i][x] = 0
 
@@ -89,15 +74,10 @@ def find_outliers(data):
 
 
             if np.abs(z_score) > threshold:
-                # remove this test set from the entire data set
-                # outliers.append(y)
-                # set outlier to zero. will try to remove next.
-                #y = 0
                 y = mean_1
                 numremoved += 1
 
-    #print "Removed " + str(numremoved) + " "
-#return outliers
+
 # Finds MOST influencel attribute towards a YES(1) CLASSIFICATION
 # Finds LEAST influencel attribute towards a NO(0) CLASSIFICATION
 # return elements that are not weighted one way or another, even elements.
@@ -122,7 +102,7 @@ def generate_hueristic(data,labels,numElements=20):
                 #hList.append(w.index(z))
                 hList.add(w.index(z))
         threshhold += 1
-        # incremenet threshhold to get next layer of elements
+        # increment threshhold to get next layer of elements
 
     return hList
 
@@ -130,7 +110,6 @@ class NN(object):
     def __init__(self, weight_sz, alpha=.25):
         self.learning_rate = alpha
         self.epochs = MAX_ITERATIONS
-        # 57 weights for 57 attributes
         self.weights = 2 * random.random((weight_sz, 1)) - 1
 
     # Normalize the function to a value between 0 and 1 using sigmoid.
@@ -405,10 +384,6 @@ def main(argv):
         t_1 = time.time()
         _total = t_1 - t_0
         print "Total time train 1-NN: " +str(_total/3.0)
-        #print "Manhatten Test ACC: " + str(x)
-        #print "L2 Test ACC: " + str(y)
-        #print "Cosign Test ACC: " + str(z)
-        #print "------------------------------"
 
         man_avg_knn1 += x
         l2_avg_knn1 += y
@@ -421,11 +396,7 @@ def main(argv):
         l2_avg_knn3 += y
         cosign_avg_knn3 += z
 
-        #print "\n3-NN"
-        #print "Manhatten Test ACC: " + str(x)
-        #print "L2 Test ACC: " + str(y)
-        #print "Cosign Test ACC: " + str(z)
-        #print "------------------------------"
+
         x,y,z = test_KNN(testData,testLabels,CL,5)
 
         man_avg_knn5 += x

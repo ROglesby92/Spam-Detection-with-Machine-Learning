@@ -606,103 +606,6 @@ def main(argv):
     print "Cosine 5-NN      AVG ACC: " + str(sum(k5nn_accuracy_list3)/NUM_SPLITS)
     print "\n5-NN Total AVG distance ACC: " + str(dist_avg_acc3)
 
-    idx = 0
-    k10nn_accuracy_list = []
-    k10nn_accuracy_list2 = []
-    k10nn_accuracy_list3 = []
-
-    print "\nEvaluating 10-KK Nearest Neighbor..."
-    for fold in kfolds[1:]:
-        #break # Remove if testing KNN
-        train_data = kfolds[1:]
-        CL = create_classifications(fold[0], fold[1])
-        train_data.remove(fold)
-        train_accuracy = []
-        train_accuracy2 = []
-        train_accuracy3 = []
-
-        for training_fold in train_data:
-            x,y,z = test_KNN(training_fold[0],training_fold[1],CL,5)
-            train_accuracy.append(x)
-            train_accuracy2.append(y)
-            train_accuracy3.append(z)
-
-        foldacc = sum(train_accuracy)/(NUM_SPLITS-1.0)
-        foldacc2 = sum(train_accuracy2)/(NUM_SPLITS-1.0)
-        foldacc3 = sum(train_accuracy3)/(NUM_SPLITS-1.0)
-
-        #print "[Fold "+ str(idx+1)+"-"+str(int(float(idx+1)/NUM_SPLITS*100))+"%]" + "Manhatten "+ ": " + str(foldacc) + "|" + " L2 "+ ": " + str(foldacc2) + "|" + " Cosign "+ ": " + str(foldacc3)
-
-        k10nn_accuracy_list.append(foldacc)
-        k10nn_accuracy_list2.append(foldacc2)
-        k10nn_accuracy_list3.append(foldacc3)
-        idx += 1
-
-    if sum(k10nn_accuracy_list)/NUM_SPLITS > best_acc:
-        best_acc = sum(k10nn_accuracy_list)/NUM_SPLITS
-        best_n = 10
-    if sum(k10nn_accuracy_list2)/NUM_SPLITS > best_acc2:
-        best_acc2 = sum(k10nn_accuracy_list2)/NUM_SPLITS
-        best_n2 = 10
-    if sum(k10nn_accuracy_list3)/NUM_SPLITS > best_acc3:
-        best_acc3 = sum(k10nn_accuracy_list3)/NUM_SPLITS
-        best_n3 = 10
-
-    dist_avg_acc4 = (best_acc+best_acc2+best_acc3)/3
-
-    print "\nManhatten 10-NN   AVG ACC: " + str(sum(k10nn_accuracy_list)/NUM_SPLITS)
-    print "L2 10-NN          AVG ACC: " + str(sum(k10nn_accuracy_list2)/NUM_SPLITS)
-    print "Cosine 10-NN     AVG ACC: " + str(sum(k10nn_accuracy_list3)/NUM_SPLITS)
-    print "\n10-NN Total AVG distance ACC: " + str(dist_avg_acc4)
-
-
-    idx = 0
-    k15nn_accuracy_list = []
-    k15nn_accuracy_list2 = []
-    k15nn_accuracy_list3 = []
-    print "\nEvaluating 15-KK Nearest Neighbor..."
-    for fold in kfolds[1:]:
-        #break # Remove if testing KNN
-        train_data = kfolds[1:]
-        CL = create_classifications(fold[0], fold[1])
-        train_data.remove(fold)
-        train_accuracy = []
-        train_accuracy2 = []
-        train_accuracy3 = []
-
-        for training_fold in train_data:
-            x,y,z = test_KNN(training_fold[0],training_fold[1],CL,5)
-            train_accuracy.append(x)
-            train_accuracy2.append(y)
-            train_accuracy3.append(z)
-
-        foldacc = sum(train_accuracy)/(NUM_SPLITS-1.0)
-        foldacc2 = sum(train_accuracy2)/(NUM_SPLITS-1.0)
-        foldacc3 = sum(train_accuracy3)/(NUM_SPLITS-1.0)
-
-        #print "[Fold "+ str(idx+1)+"-"+str(int(float(idx+1)/NUM_SPLITS*100))+"%]" + "Manhatten "+ ": " + str(foldacc) + "|" + " L2 "+ ": " + str(foldacc2) + "|" + " Cosign "+ ": " + str(foldacc3)
-
-        k15nn_accuracy_list.append(foldacc)
-        k15nn_accuracy_list2.append(foldacc2)
-        k15nn_accuracy_list3.append(foldacc3)
-        idx += 1
-
-    if sum(k15nn_accuracy_list)/NUM_SPLITS > best_acc:
-        best_acc = sum(k15nn_accuracy_list)/NUM_SPLITS
-        best_n = 15
-    if sum(k15nn_accuracy_list2)/NUM_SPLITS > best_acc2:
-        best_acc2 = sum(k15nn_accuracy_list2)/NUM_SPLITS
-        best_n2 = 15
-    if sum(k15nn_accuracy_list3)/NUM_SPLITS > best_acc3:
-        best_acc3 = sum(k15nn_accuracy_list3)/NUM_SPLITS
-        best_n3 = 15
-
-    dist_avg_acc5 = (best_acc+best_acc2+best_acc3)/3
-
-    print "\nManhatten 15-NN   AVG ACC: " + str(sum(k15nn_accuracy_list)/NUM_SPLITS)
-    print "L2 15-NN          AVG ACC: " + str(sum(k15nn_accuracy_list2)/NUM_SPLITS)
-    print "Cosine 15-NN     AVG ACC: " + str(sum(k15nn_accuracy_list3)/NUM_SPLITS)
-    print "\n15-NN Total AVG distance ACC: " + str(dist_avg_acc5)
 
     print "Testing with on test data now..:\n"
     CL = create_classifications(training_data[0],training_data[1])
@@ -726,7 +629,6 @@ def main(argv):
     print "Manhatten Test ACC: " + str(x)
     print "L2 Test ACC: " + str(y)
     print "Cosign Test ACC: " + str(z)
-
 
     print "\nTesting neural_network acc on data...\n"
 

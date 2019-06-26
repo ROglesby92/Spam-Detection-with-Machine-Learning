@@ -141,29 +141,26 @@ def normalize_data(data):
 
 				
 def main(argv):
-	if (len(argv) != 1):
-		print('Usage: network.py <DATA> ')
-		sys.exit(2)
-	total_nn_acc = 0.0
-	for i in range(10):
-		(data, y) = open_file(argv[0])
-		normalize_data(data)
-		kfolds, training_data = split_data_set(data, y, NUM_SPLITS)
-		neural_network = NN(weight_sz=len(training_data[0][0]),alpha=.1)
-     
-		# First split is 20% of set, take that for test data
-           	testData = kfolds[0][0][:]
-            	testLabels = kfolds[0][1][:]
-            	
-		print "I : " + str(i)
-            	
-		inputs = array(training_data[0], dtype=float128)
-            	outputs = array([training_data[1]], dtype=float128).T
-            	neural_network.train(inputs,outputs)
-            	total_nn_acc += test_accuracy((testData,testLabels), neural_network)
-
-        print "Final NN Acc: " + str(total_nn_acc/10)
-        return
+    if (len(argv) != 1):
+	print('Usage: network.py <DATA> ')
+	sys.exit(2)
+    total_nn_acc = 0.0
+    for i in range(10):
+	(data, y) = open_file(argv[0])
+	normalize_data(data)
+	kfolds, training_data = split_data_set(data, y, 5)
+	neural_network = NN(weight_sz=len(training_data[0][0]),alpha=.1)
+	# First split is 20% of set, take that for test data
+        testData = kfolds[0][0][:]
+        testLabels = kfolds[0][1][:]    
+	print "I : " + str(i)
+	inputs = array(training_data[0], dtype=float128)
+        outputs = array([training_data[1]], dtype=float128).T
+        neural_network.train(inputs,outputs)
+        total_nn_acc += test_accuracy((testData,testLabels), neural_network)
+    
+    print "Final NN Acc: " + str(total_nn_acc/10)
+    return
 
 if __name__ == "__main__":
     main(sys.argv[1:])

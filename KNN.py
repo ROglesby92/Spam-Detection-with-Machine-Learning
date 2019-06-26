@@ -1,11 +1,16 @@
+# K-Nearest Neighbor Python implmentation (NO NUMPY)
+# Evalutes 3 Distance metrics: Manhatten, L2 and Cosine Similarity distance.
+# Data is split up(k-ways) saving 20% for test datafor K-Fold validation(if needed).
+# Author: Ryan Oglesby
+# 
+
 import csv
 import sys
 import math
 import numpy as np
 from numpy import *
 import time
-# K-Nearest Neighbor Python implmentation (NO NUMPY)
-# Evalutes 3 Distance metrics: Manhatten, L2 and Cosine Similarity distance.
+
 
 """
 classify: K-NN implementation.

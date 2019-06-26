@@ -146,6 +146,8 @@ def main(argv):
     if (len(argv) != 1):
 	print('Usage: network.py <DATA> ')
 	sys.exit(2)
+    
+    print "Generating NN Test AVG. . ."
     total_nn_acc = 0.0
     for i in range(10):
 	(data, y) = open_file(argv[0])
@@ -155,7 +157,7 @@ def main(argv):
 	# First split is 20% of set, take that for test data
         testData = kfolds[0][0][:]
         testLabels = kfolds[0][1][:]    
-	print "I : " + str(i)
+	print "Train session : " + str(i)
 	inputs = array(training_data[0], dtype=float128)
         outputs = array([training_data[1]], dtype=float128).T
         neural_network.train(inputs,outputs)

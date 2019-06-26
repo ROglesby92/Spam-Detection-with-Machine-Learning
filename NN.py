@@ -7,6 +7,8 @@ from numpy import *
 # Single Neruon Neural Network.
 
 MAX_ITERATIONS = 1000
+ERR_FORGIVE = .5f
+
 
 class NN(object):
     def __init__(self, weight_sz, alpha=.25):

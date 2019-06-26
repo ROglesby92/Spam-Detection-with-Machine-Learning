@@ -187,7 +187,7 @@ def normalize_data(data):
 def main(argv):
     if (len(argv) != 1):
         print('Usage: KNN.py <DATASET> ')
-	      sys.exit(2)
+	sys.exit(2)
     
     # How many test iterations? (Remember, it will take longer for bigger dimensional datasets (15+ features))
     num_epochs = 5
@@ -205,9 +205,11 @@ def main(argv):
     cosign_avg_knn3 = 0.0
     cosign_avg_knn5 = 0.0
     
-    
+    (data, y) = open_file(argv[0])
     for i in range(num_epochs):
-        # trainig_data is 80% test data no folds
+        print "ITER: " + str(i)
+        
+	# trainig_data is 80% test data no folds
         kfolds, training_data = split_data_set(data, y, NUM_SPLITS)
         # First split is 20% of set, take that for test data
         testData = kfolds[0][0][:]

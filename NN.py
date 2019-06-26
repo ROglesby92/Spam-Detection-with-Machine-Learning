@@ -7,7 +7,7 @@ from numpy import *
 # Single Neruon Neural Network.
 
 MAX_ITERATIONS = 1000
-ERR_FORGIVE = .5f
+ERR_FORGIVE = .5
 
 
 class NN(object):

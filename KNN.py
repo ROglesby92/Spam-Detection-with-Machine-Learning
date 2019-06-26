@@ -205,12 +205,12 @@ def main(argv):
     cosign_avg_knn3 = 0.0
     cosign_avg_knn5 = 0.0
     
-    (data, y) = open_file(argv[0])
+    
     for i in range(num_epochs):
         print "ITER: " + str(i)
-        
+        (data, y) = open_file(argv[0])
 	# trainig_data is 80% test data no folds
-        kfolds, training_data = split_data_set(data, y, NUM_SPLITS)
+        kfolds, training_data = split_data_set(data, y, 5)
         # First split is 20% of set, take that for test data
         testData = kfolds[0][0][:]
         testLabels = kfolds[0][1][:]
